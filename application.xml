@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<application xmlns="http://ns.adobe.com/air/application/3.1">
+<application xmlns="http://ns.adobe.com/air/application/51.0">
   <id>com.guepard.app.converter</id>
   <versionNumber>1.0.999</versionNumber>
   <filename>converter</filename>
-  <name>converter</name>
+  <name>converter-test</name>
   <initialWindow>
     <title>converter</title>
     <content>converter.swf</content>
