@@ -1,0 +1,52 @@
+{
+  "settings": {
+    "sdkPath": "/Users/crystal/Documents/Projects/guepard/sdk"
+  },
+  "parameters": {
+    "fillScreen": true,
+    "scaleMode": 0,
+    "align": 0,
+    "appHeight": 480,
+    "frameRate": 30,
+    "backgroundColor": "0xffffff",
+    "appWidth": 640
+  },
+  "resources": {
+    "compressDigits": 3,
+    "exportDebugTextures": true,
+    "texturePowerMin": 5,
+    "shapeBorder": 2,
+    "exportFonts": true,
+    "shapeScale": 100,
+    "exportCode": true,
+    "imageQuality": 80,
+    "exportSounds": true,
+    "scaleMargin": 5,
+    "exportResources": true,
+    "shapeBigScale": true,
+    "texturePowerBig": 11,
+    "exportCodeEmbed": true,
+    "shapeScaleMin": 90,
+    "texturePowerMax": 11,
+    "exportCodeTokens": true,
+    "exportCodeTree": true
+  },
+  "target": {
+    "convertExternalSWF": false,
+    "html5ProjectPath": "",
+    "exportDataInZIP": false,
+    "htmlTemplate": "",
+    "minify": true,
+    "enableBuild": true,
+    "renderType": 0,
+    "copyOriginalSWF": false
+  },
+  "source": {
+    "flaFile": "",
+    "projectName": "testProject",
+    "swfFile": "",
+    "preloaderFile": "",
+    "mainClass": "",
+    "sourceCodePath": ""
+  }
+}
