@@ -656,7 +656,9 @@ package com.guepard.parser.serialization
 							case TokenType.STRING:
 							case TokenType.LITERAL:
 							case TokenType.REGULAR_EXPRESSION:
-								stream.writeSymbol(expression.tokenData);
+                var regex:String = expression.tokenData;
+                regex = regex.replace(/\(\?P</g, "(?<");
+								stream.writeSymbol(regex);
 								break;
 							
 							case TokenType.NATIVE_XML:
