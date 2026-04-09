@@ -1126,6 +1126,19 @@ package com.guepard.parser.serialization
 							}
 							break;
 						
+            // t<=0.5?t*t*2:1---t*t*2;
+            // t<=0.5?t*t*2:1-(--t*t*2);
+            case "-":
+              if (expression.child && expression.child.tokenData == "--") {
+                stream.writeSymbol(expression.tokenData);
+                stream.writeSymbol("(");
+                writePath(stream, expression.child, method, info, checkFunction);
+                stream.writeSymbol(")");
+                return;
+              }
+              stream.writeSymbol(expression.tokenData);
+              break;
+
 						default:
 							stream.writeSymbol(expression.tokenData);
 							break;
