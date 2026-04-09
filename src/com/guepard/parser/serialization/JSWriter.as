@@ -981,7 +981,13 @@ package com.guepard.parser.serialization
 							if (expression.body.length)
 							{
 								_convertComma = false;
-								writeBlock(stream, "(", ")", expression.body, "; ", method, info, new Token(TokenType.OPERATOR, ","));
+                stream.writeSymbol("(");
+								writeBody(stream, expression.body, method, info, "; ", false, new Token(TokenType.OPERATOR, ","));
+                removeSplitter(stream, "; ");
+                if (expression.body.length == 2) {
+                  stream.writeSymbol(";");
+                }
+                stream.writeSymbol(")");
 								_convertComma = true;
 							}
 							else
