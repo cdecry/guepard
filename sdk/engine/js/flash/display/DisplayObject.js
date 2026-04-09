@@ -483,8 +483,68 @@ import flash.geom.*;
     return this.getBounds(targetCoordinateSpace);
   };
 
+  d.hitTestPoint = function (x, y, shapeFlag) {
+    var pt = new flash.geom.Point(x, y);
+    if (this.globalToLocal) pt = this.globalToLocal(pt);
+    var b = this.getBounds ? this.getBounds(this) : null;
+    if (!b) return false;
+    return (
+      pt.x >= b.x &&
+      pt.y >= b.y &&
+      pt.x <= b.x + b.width &&
+      pt.y <= b.y + b.height
+    );
+  };
+
   d.hitTestObject = function (obj /*DisplayObject*/ /*Boolean*/) {
-    return false;
+    if (obj == null) {
+      return false;
+    }
+    // This object is "colliding" with itself. Change if incorrect behaviour.
+    if (obj == this) {
+      return true;
+    }
+    var target = null;
+    var boundsA = null;
+    var boundsB = null;
+    // Comparing this.getBounds(target); and obj.getBounds(target):
+    // We want to get the bounds for these objects in the coordinate space of a
+    // TARGET. This target can be the stage, or other objects in the scene.
+    // The objects must share a stage, or parent, otherwise they shoudln't collide.
+    if (this.get_stage) {
+      target = this.get_stage();
+    } else if (
+      this.get_parent &&
+      obj.get_parent &&
+      this.get_parent() != null &&
+      this.get_parent() == obj.get_parent()
+    ) {
+      target = this.get_parent();
+    } else {
+      return false;
+    }
+    try {
+      boundsA = this.getBounds(target);
+      boundsB = obj.getBounds(target);
+    } catch (e) {
+      return false;
+    }
+    if (
+      boundsA == null ||
+      boundsB == null ||
+      boundsA.width <= 0 ||
+      boundsA.height <= 0 ||
+      boundsB.width <= 0 ||
+      boundsB.height <= 0
+    ) {
+      return false;
+    }
+    return !(
+      boundsA.x + boundsA.width <= boundsB.x ||
+      boundsB.x + boundsB.width <= boundsA.x ||
+      boundsA.y + boundsA.height <= boundsB.y ||
+      boundsB.y + boundsB.height <= boundsA.y
+    );
   };
 
   /*override*/

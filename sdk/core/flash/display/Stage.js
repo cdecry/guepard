@@ -450,15 +450,16 @@ import flash.ui.*;
     var p;
 
     var canvasRect = this._canvas.getBoundingClientRect();
-
+    var scaleX = this._canvas.width / canvasRect.width;
+    var scaleY = this._canvas.height / canvasRect.height;
     if (touchType) {
       var touches = e.changedTouches;
 
       var firstTouch = touches[0];
 
       p = this._getMousePoint(
-        firstTouch.clientX - canvasRect.left,
-        firstTouch.clientY - canvasRect.top,
+        (firstTouch.clientX - canvasRect.left) * scaleX,
+        (firstTouch.clientY - canvasRect.top) * scaleY,
       );
 
       this._mouseX = p.x;
@@ -487,8 +488,8 @@ import flash.ui.*;
       } else {
         for (var i = 0; i < touches.length; i++) {
           p = this._getMousePoint(
-            touches[i].clientX - canvasRect.left,
-            touches[i].clientY - canvasRect.top,
+            (touches[i].clientX - canvasRect.left) * scaleX,
+            (touches[i].clientY - canvasRect.top) * scaleY,
           );
 
           data.type = touchType;
@@ -521,8 +522,8 @@ import flash.ui.*;
       }
 
       p = this._getMousePoint(
-        e.clientX - canvasRect.left,
-        e.clientY - canvasRect.top,
+        (e.clientX - canvasRect.left) * scaleX,
+        (e.clientY - canvasRect.top) * scaleY,
       );
 
       this._mouseX = p.x;

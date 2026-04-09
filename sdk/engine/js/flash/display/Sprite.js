@@ -300,45 +300,73 @@ import flash.media.*;
 
   d.set_soundTransform = function (sndTransform /*SoundTransform*/ /*void*/) {};
 
-  d.startDrag = function (
-    lockCenter /*Boolean*/,
-    bounds /*Rectangle*/ /*void*/,
-  ) {
+  // TODO: Implement lockCenter and bounds
+
+  d.startDrag = function (lockCenter, bounds) {
     if (lockCenter == undefined) lockCenter = false;
     if (bounds == undefined) bounds = null;
 
-    // TODO: Implement lockCenter and bounds
+    this._dragBounds = bounds || null;
+    this._dragLockCenter = !!lockCenter;
 
-    this._dragOldPoint = {
-      x: this.get_mouseX(),
-      y: this.get_mouseY(),
-    };
+    var st = this.get_stage();
+    if (!st) return;
 
-    this.get_stage().addEventListener(
+    var ptStage = new flash.geom.Point(st.get_mouseX(), st.get_mouseY());
+    // convert stage to parent local space
+    var parent = this.get_parent ? this.get_parent() : null;
+    var ptParent =
+      parent && parent.globalToLocal ? parent.globalToLocal(ptStage) : ptStage;
+
+    if (this._dragLockCenter) {
+      this._dragOffset = { x: 0, y: 0 };
+    } else {
+      this._dragOffset = {
+        x: ptParent.x - this.get_x(),
+        y: ptParent.y - this.get_y(),
+      };
+    }
+
+    st.addEventListener(
       flash.events.MouseEvent.MOUSE_MOVE,
       flash.bindFunction(this, this._dragMoveTo),
     );
   };
+  d.stopDrag = function () {
+    var st = this.get_stage();
+    if (!st) return;
 
-  d.stopDrag = function () /*void*/
-  {
-    this.get_stage().removeEventListener(
+    st.removeEventListener(
       flash.events.MouseEvent.MOUSE_MOVE,
       flash.bindFunction(this, this._dragMoveTo),
     );
   };
-
   d._dragMoveTo = function (e) {
-    var dx = this.get_mouseX() - this._dragOldPoint.x;
-    var dy = this.get_mouseY() - this._dragOldPoint.y;
+    var st = this.get_stage();
+    if (!st) return;
 
-    this.set_x(this.get_x() + dx);
-    this.set_y(this.get_y() + dy);
+    var ptStage = new flash.geom.Point(st.get_mouseX(), st.get_mouseY());
+    var parent = this.get_parent ? this.get_parent() : null;
+    var ptParent =
+      parent && parent.globalToLocal ? parent.globalToLocal(ptStage) : ptStage;
 
-    this._dragOldPoint = {
-      x: this.get_mouseX(),
-      y: this.get_mouseY(),
-    };
+    var off = this._dragOffset || { x: 0, y: 0 };
+    var nx = ptParent.x - off.x;
+    var ny = ptParent.y - off.y;
+
+    // bounds assumed to be in parent space
+    var b = this._dragBounds;
+    if (b) {
+      if (nx < b.x) nx = b.x;
+      if (ny < b.y) ny = b.y;
+      if (nx > b.x + b.width) nx = b.x + b.width;
+      if (ny > b.y + b.height) ny = b.y + b.height;
+    }
+
+    this.set_x(nx);
+    this.set_y(ny);
+
+    if (e && e.updateAfterEvent) e.updateAfterEvent();
   };
 
   d._checkInteractiveEvent = function (data) {

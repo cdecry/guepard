@@ -96,7 +96,7 @@ import flash.ui.*;
     if (this._rendermode != "2d") {
       console.warn("Render 3d is not supported");
 
-      this._rendermode == "2d";
+      this._rendermode = "2d";
     }
 
     if (this._rendermode == "2d") {
@@ -465,6 +465,8 @@ import flash.ui.*;
     var p;
 
     var canvasRect = this._canvas.getBoundingClientRect();
+    var scaleX = this._canvas.width / canvasRect.width;
+    var scaleY = this._canvas.height / canvasRect.height;
 
     if (touchType) {
       var touches = e.changedTouches;
@@ -472,8 +474,8 @@ import flash.ui.*;
       var firstTouch = touches[0];
 
       p = this._getMousePoint(
-        firstTouch.clientX * ratio - canvasRect.left,
-        firstTouch.clientY * ratio - canvasRect.top,
+        (firstTouch.clientX - canvasRect.left) * scaleX,
+        (firstTouch.clientY - canvasRect.top) * scaleY,
       );
 
       this._mouseX = p.x;
@@ -502,8 +504,8 @@ import flash.ui.*;
       } else {
         for (var i = 0; i < touches.length; i++) {
           p = this._getMousePoint(
-            touches[i].clientX * ratio - canvasRect.left,
-            touches[i].clientY * ratio - canvasRect.top,
+            (touches[i].clientX - canvasRect.left) * scaleX,
+            (touches[i].clientY - canvasRect.top) * scaleY,
           );
 
           data.type = touchType;
@@ -538,8 +540,8 @@ import flash.ui.*;
       }
 
       p = this._getMousePoint(
-        e.clientX * ratio - canvasRect.left,
-        e.clientY * ratio - canvasRect.top,
+        (e.clientX - canvasRect.left) * scaleX,
+        (e.clientY - canvasRect.top) * scaleY,
       );
 
       this._mouseX = p.x;
