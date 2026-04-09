@@ -591,9 +591,44 @@
     }
   };
 
+  flash.installGameTimer = function (TimerClass) {
+    if (!TimerClass || TimerClass.__timerInstalled) return false;
+    TimerClass.__timerInstalled = true;
+    var rawGetTimer = function () {
+      return flash.utils.getTimer();
+    };
+    TimerClass.paused = false;
+    TimerClass.pauseTime = 0;
+    TimerClass.totalPausedTime = 0;
+    TimerClass.getTimer = function () {
+      if (TimerClass.paused) {
+        return TimerClass.pauseTime - TimerClass.totalPausedTime;
+      }
+      return rawGetTimer() - TimerClass.totalPausedTime;
+    };
+    TimerClass.pause = function () {
+      if (TimerClass.paused) return;
+      TimerClass.paused = true;
+      TimerClass.pauseTime = rawGetTimer();
+    };
+    TimerClass.unpause = function () {
+      if (!TimerClass.paused) return;
+      TimerClass.paused = false;
+      TimerClass.totalPausedTime += rawGetTimer() - TimerClass.pauseTime;
+    };
+    return true;
+  };
+
   flash.init = function () {
     flash.initDescriptions();
     flash.initStatics();
+
+    // This should install the timer for any class that ends in *NewTimer.
+    for (var className in flash.classes) {
+      if (/(\.|^)\w*NewTimer$/.test(className)) {
+        flash.installGameTimer(flash.classes[className]);
+      }
+    }
   };
 
   flash.embed = function () {
@@ -610,9 +645,13 @@
     if (override == undefined) override = true;
 
     for (var i in source) {
+      if (i === "name" || i === "length" || i === "prototype") continue;
+
       if (!ignored || ignored.indexOf(i) == -1) {
         if (override || target[i] == undefined) {
-          target[i] = source[i];
+          try {
+            target[i] = source[i];
+          } catch (e) {}
         }
       }
     }
@@ -909,3 +948,201 @@
   flash.correctTypedArrays();
   flash.correctArray();
 })();
+
+flash._collectObstaclesInBounds = function (
+  root,
+  playBounds,
+  options,
+  mapResult,
+) {
+  options = options || {};
+  var stage = root && root.get_stage ? root.get_stage() : null;
+  if (!root || !stage || !playBounds) return [];
+  var minArea = options.minArea != null ? options.minArea : 150;
+  var maxAreaRatio = options.maxAreaRatio != null ? options.maxAreaRatio : 0.35;
+  var maxDepth = options.maxDepth != null ? options.maxDepth : 10;
+  var ignoreNames = options.ignoreNames || { body: true };
+  var playArea =
+    Math.max(0, playBounds.maxX - playBounds.minX) *
+    Math.max(0, playBounds.maxY - playBounds.minY);
+  var results = [];
+  var seen = [];
+  function getNumChildren(node) {
+    if (!node) return 0;
+    if (typeof node.get_numChildren === "function")
+      return node.get_numChildren();
+    if (typeof node.numChildren === "number") return node.numChildren;
+    return 0;
+  }
+  function getChildAt(node, index) {
+    if (!node) return null;
+    if (typeof node.get_childAt === "function") return node.get_childAt(index);
+    if (typeof node.getChildAt === "function") return node.getChildAt(index);
+    return null;
+  }
+  function isVisible(node) {
+    return (
+      node && (node.get_visible ? node.get_visible() : node.visible) !== false
+    );
+  }
+  function getName(node) {
+    if (!node) return null;
+    return node.get_name ? node.get_name() : node.name;
+  }
+  function rectArea(rect) {
+    return Math.max(0, rect.width) * Math.max(0, rect.height);
+  }
+  function intersectsPlayBounds(rect) {
+    return !(
+      rect.x + rect.width < playBounds.minX ||
+      rect.x > playBounds.maxX ||
+      rect.y + rect.height < playBounds.minY ||
+      rect.y > playBounds.maxY
+    );
+  }
+  function addResult(node, bounds) {
+    if (seen.indexOf(node) !== -1) return;
+    seen.push(node);
+    results.push(mapResult(node, bounds, getName));
+  }
+  function walk(node, depth) {
+    if (!node || depth > maxDepth) return;
+    if (!isVisible(node)) return;
+    var name = getName(node);
+    if (name && ignoreNames[name]) return;
+    var numChildren = getNumChildren(node);
+    if (numChildren === 0) {
+      if (typeof node.getBounds !== "function") return;
+      var bounds = node.getBounds(stage);
+      if (!bounds) return;
+      var area = rectArea(bounds);
+      if (area < minArea) return;
+      if (area > playArea * maxAreaRatio) return;
+      if (!intersectsPlayBounds(bounds)) return;
+      addResult(node, bounds);
+      return;
+    }
+    for (var i = 0; i < numChildren; i++) {
+      walk(getChildAt(node, i), depth + 1);
+    }
+  }
+  walk(root, 0);
+  return results;
+};
+flash.getObstaclesInBounds = function (root, playBounds, options) {
+  return flash._collectObstaclesInBounds(
+    root,
+    playBounds,
+    options,
+    function (node) {
+      return node;
+    },
+  );
+};
+flash.getObstacleInfosInBounds = function (root, playBounds, options) {
+  return flash._collectObstaclesInBounds(
+    root,
+    playBounds,
+    options,
+    function (node, bounds, getName) {
+      var parent = node.get_parent ? node.get_parent() : node.parent;
+      return {
+        node: node,
+        name: getName(node),
+        parent: parent || null,
+        parentId: parent && parent.__id__,
+        textureId:
+          node.graphics &&
+          node.graphics._textureInfo &&
+          node.graphics._textureInfo.id,
+        bounds: {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        },
+      };
+    },
+  );
+};
+flash.drawObstacleDebug = function (root, obstacleInfos) {
+  var stage = root && root.get_stage ? root.get_stage() : null;
+  var overlay, i, info, b, oldParent;
+  if (!root || !stage) return;
+  if (root.__obstacleDebugOverlay) {
+    oldParent = root.__obstacleDebugOverlay.get_parent
+      ? root.__obstacleDebugOverlay.get_parent()
+      : root.__obstacleDebugOverlay.parent;
+    if (oldParent) {
+      oldParent.removeChild(root.__obstacleDebugOverlay);
+    }
+    root.__obstacleDebugOverlay = null;
+  }
+  overlay = new flash.display.Shape();
+  overlay.mouseEnabled = false;
+  if (overlay.mouseChildren !== undefined) overlay.mouseChildren = false;
+  overlay.graphics.lineStyle(2, 0xff0000, 1);
+  for (i = 0; i < obstacleInfos.length; i++) {
+    info = obstacleInfos[i];
+    if (!info || !info.bounds) continue;
+    b = info.bounds;
+    overlay.graphics.drawRect(b.x, b.y, b.width, b.height);
+  }
+  stage.addChild(overlay);
+  root.__obstacleDebugOverlay = overlay;
+  root.__obstacleDebugInfos = obstacleInfos.slice();
+};
+flash.installObstacleDebugRemoveHotkey = function (root, options) {
+  var stage = root && root.get_stage ? root.get_stage() : null;
+  options = options || {};
+  if (!root || !stage) return;
+  if (root.__obstacleDebugHotkeyInstalled) return;
+  root.__obstacleDebugHotkeyInstalled = true;
+  window.addEventListener("keydown", function (e) {
+    var key = (e.key || "").toLowerCase();
+    var infos, mx, my, i, info, b, removed;
+    if (key !== (options.key || "r")) return;
+    infos = root.__obstacleDebugInfos || [];
+    if (!infos.length) {
+      console.log("No obstacle debug infos available.");
+      return;
+    }
+    mx = stage._mouseX != null ? stage._mouseX : stage.mouseX;
+    my = stage._mouseY != null ? stage._mouseY : stage.mouseY;
+    removed = null;
+    for (i = infos.length - 1; i >= 0; i--) {
+      info = infos[i];
+      b = info && info.bounds;
+      if (
+        b &&
+        mx >= b.x &&
+        my >= b.y &&
+        mx <= b.x + b.width &&
+        my <= b.y + b.height
+      ) {
+        removed = info;
+        infos.splice(i, 1);
+        break;
+      }
+    }
+    if (!removed) {
+      console.log("No outlined obstacle under mouse.");
+      return;
+    }
+    console.log("Removed obstacle:", {
+      name: removed.name,
+      parentId: removed.parentId,
+      textureId: removed.textureId,
+      bounds: removed.bounds,
+      node: removed.node,
+      parent: removed.parent,
+    });
+    flash.drawObstacleDebug(root, infos);
+  });
+};
+flash.refreshObstacleDebug = function (root, playBounds, options) {
+  var infos = flash.getObstacleInfosInBounds(root, playBounds, options);
+  flash.drawObstacleDebug(root, infos);
+  flash.installObstacleDebugRemoveHotkey(root, options);
+  return infos;
+};
