@@ -1364,6 +1364,7 @@ package com.guepard.parser.serialization
 		{
 			if (expression.context &&
 				expression.context.data == "Class" &&
+        expression.context.child &&
 				expression.parent &&
 				expression.parent.type == ExpressionType.OPERATION &&
 				expression.parent.tokenData == "as" &&
