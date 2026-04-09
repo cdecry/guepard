@@ -1057,7 +1057,35 @@ package com.guepard.parser.serialization
 					expression = new ExpressionInfo();
 					expression.type = ExpressionType.VECTOR;
 					expression.token = token;
-					expression.body = readBody(token, method);
+					token.gotoBegin();
+
+          if (token.tokensAvailable)
+          {
+            var first:Token = token.readToken();
+
+            if (!token.tokensAvailable &&
+              first &&
+              first.type == TokenType.OPERATOR &&
+              first.data == "*")
+            {
+              var inner:ExpressionInfo = new ExpressionInfo();
+              inner.type = ExpressionType.GET;
+              inner.token = first;
+
+              expression.body = new Vector.<ExpressionInfo>();
+              expression.body.push(inner);
+            }
+            else
+            {
+              token.gotoBegin();
+              expression.body = readBody(token, method);
+            }
+          }
+          else
+          {
+            expression.body = new Vector.<ExpressionInfo>();
+          }
+
 					expression.child = readAccess(stream, method);
 				}
 				else

@@ -1457,39 +1457,44 @@ package com.guepard.parser.serialization
 		}
 		
 		static private function getVectorContext(expression:ExpressionInfo, info:ClassInfo):NamespaceInfo
-		{
-			var context:NamespaceInfo = new NamespaceInfo();
-			
-			if (expression.type == ExpressionType.VECTOR)
-			{
-				if (expression.body && expression.body.length)
-				{
-					context.data = "Vector";
-					context.child = getVectorContext(expression.body[0], info);
-				}
-				else
-				{
-					errorMessage("Invalid vector body. Expression: " + expression, info, true);
-				}
-			}
-			else if (expression.type == ExpressionType.GET)
-			{
-				context.data = expression.about;
-				
-				var importInfo:NamespaceInfo = info.getImport(context.data);
-				
-				if (importInfo)
-				{
-					context.data = importInfo.data;
-				}
-			}
-			else
-			{
-				errorMessage("Invalid vector. Expression: " + expression, info, true);
-			}
-			
-			return context;
-		}
+    {
+      var context:NamespaceInfo = new NamespaceInfo();
+
+      if (expression.type == ExpressionType.VECTOR)
+      {
+        if (expression.body && expression.body.length)
+        {
+          context.data = "Vector";
+          context.child = getVectorContext(expression.body[0], info);
+        }
+        else
+        {
+          errorMessage("Invalid vector body. Expression: " + expression, info, true);
+        }
+      }
+      else if (expression.type == ExpressionType.GET)
+      {
+        context.data = expression.about;
+
+        var importInfo:NamespaceInfo = info.getImport(context.data);
+
+        if (importInfo)
+        {
+          context.data = importInfo.data;
+        }
+      }
+      else if (expression.tokenData == "*" || expression.about == "*")
+      {
+        // SUpport Vector.<*> wildcard element type.
+        context.data = "Object";
+      }
+      else
+      {
+        errorMessage("Invalid vector. Expression: " + expression, info, true);
+      }
+
+      return context;
+    }
 		
 		static private function errorMessage(message:String, info:ClassInfo, error:Boolean):void
 		{
