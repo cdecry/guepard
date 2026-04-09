@@ -83,7 +83,7 @@ import flash.ui.*;
     this._transform = new flash.geom.Transform(this);
     this._transform._matrix = this._transform._concatenatedMatrix;
     this._rendermode = rendermode;
-
+    this._rendermode = "2d";
     if (this._rendermode != "2d" && this._rendermode != "3d") {
       var canvas = document.getElementById(canvasId);
 
