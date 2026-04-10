@@ -634,6 +634,68 @@ package com.guepard.parser.serialization
 			}
 		}
 		
+    private function getLastPathNode(expression:ExpressionInfo):ExpressionInfo
+    {
+      var current:ExpressionInfo = expression;
+
+      while (current && current.child && current.child.enabled)
+      {
+        current = current.child;
+      }
+
+      return current;
+  }
+
+  private function writePathWithoutLastElement(stream:Token, root:ExpressionInfo, method:MethodInfo, info:ClassInfo):ExpressionInfo
+  {
+    var tail:ExpressionInfo = getLastPathNode(root);
+
+    if (tail && tail.type == ExpressionType.ELEMENT)
+    {
+      tail.enabled = false;
+      writePath(stream, root, method, info, false);
+      tail.enabled = true;
+      return tail;
+    }
+
+    writePath(stream, root, method, info, false);
+    return tail;
+  }
+
+  private function writeDictionaryElementIncDec(stream:Token, setExpression:ExpressionInfo, method:MethodInfo, info:ClassInfo):void
+  {
+    var element:ExpressionInfo = getLastPathNode(setExpression.child);
+    var op:String = setExpression.tokenData;
+
+    if (!element || element.type != ExpressionType.ELEMENT)
+    {
+        return;
+    }
+
+    // obj.setProperty(
+    writePathWithoutLastElement(stream, setExpression.child, method, info);
+    stream.writeSymbol(".", "setProperty", "(");
+
+    // key
+    writeBody(stream, element.body, method, info);
+    removeSplitter(stream);
+
+    stream.writeSymbol(",");
+
+    // obj.getProperty(key)
+    writePathWithoutLastElement(stream, setExpression.child, method, info);
+    stream.writeSymbol(".", "getProperty", "(");
+
+    writeBody(stream, element.body, method, info);
+    removeSplitter(stream);
+
+    stream.writeSymbol(")");
+    stream.writeSymbol(op == "++" ? "+" : "-");
+    stream.writeSymbol("1");
+
+    stream.writeSymbol(")");
+  }
+
 		private function writeExpression(stream:Token, expression:ExpressionInfo, method:MethodInfo, info:ClassInfo):void
 		{
 			var checkFunction:Boolean = false;
@@ -839,6 +901,19 @@ package com.guepard.parser.serialization
 					break;
 				
 				case ExpressionType.SET:
+          // Replace ++xyz.getProperty(abc) with xyz.setProperty(abc,xyz.getProperty(abc)+1);
+          if (expression.tokenData == "++" || expression.tokenData == "--")
+          {
+            var tail:ExpressionInfo = getLastPathNode(expression.child);
+
+            if (tail &&
+                tail.type == ExpressionType.ELEMENT &&
+                (tail.isDictionary || (tail.parent && tail.parent.isDictionary)))
+            {
+              writeDictionaryElementIncDec(stream, expression, method, info);
+              return;
+            }
+          }
 					stream.writeSymbol(expression.tokenData);
 					checkFunction = true;
 					break;
