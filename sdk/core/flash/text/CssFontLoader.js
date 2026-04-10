@@ -54,7 +54,7 @@
     if (this._virtualcanvas == null) {
       this._virtualcanvas = document.createElement("canvas");
       this._virtualcanvas.width = 32;
-      this._virtualcanvas.heigth = 32;
+      this._virtualcanvas.height = 32;
       this._context2d = this._virtualcanvas.getContext("2d");
       this._context2d.textBaseline = "top";
       this._context2d.textAlign = "left";
@@ -66,6 +66,15 @@
     }
 
     this._fontName = name;
+
+    if (!name || name.toLowerCase() == "default") {
+      flash.trace("load font complete: " + this._fontName);
+      this.dispatchEvent(
+        new flash.events.Event(flash.events.Event.COMPLETE, false, false),
+      );
+      return;
+    }
+
     var context = this._context2d;
     context.clearRect(0, 0, 32, 32);
     context.font = "20px";
@@ -87,15 +96,10 @@
     var currentData = current.data;
     var testData = this._data.data;
 
-    //console.log(currentData,testData);
+    var i = currentData.length - 1;
 
-    var i = currentData.length;
-
-    //console.log("data");
-
-    while (currentData) {
+    while (i >= 0) {
       if (currentData[i] != testData[i]) {
-        console.log(currentData[i], testData[i], i);
         this.dispatchEvent(
           new flash.events.Event(flash.events.Event.COMPLETE, false, false),
         );
@@ -106,11 +110,10 @@
         this._timer.stop();
 
         flash.trace("load font complete: " + this._fontName);
-        break;
+        return;
       }
       i--;
     }
-    //console.log("fdata");
   };
 
   var s = {};
