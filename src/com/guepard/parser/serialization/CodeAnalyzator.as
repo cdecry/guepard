@@ -1102,7 +1102,9 @@ package com.guepard.parser.serialization
 							}
 							else
 							{
-								errorMessage("Element has not context. Expression: " + expression, info, true);
+								// errorMessage("Element has not context. Expression: " + expression, info, true);
+                // Falback
+                expression.context = new NamespaceInfo("Object");
 							}
 						}
 						else
