@@ -633,24 +633,24 @@ package com.guepard.parser.serialization
 				}
 			}
 		}
-		
-    private function getLastPathNode(expression:ExpressionInfo):ExpressionInfo
+
+  private function getLastPathNode(expression:ExpressionInfo):ExpressionInfo
+  {
+    var current:ExpressionInfo = expression;
+
+    while (current && current.child && current.child.enabled)
     {
-      var current:ExpressionInfo = expression;
+      current = current.child;
+    }
 
-      while (current && current.child && current.child.enabled)
-      {
-        current = current.child;
-      }
-
-      return current;
+    return current;
   }
 
-  private function writePathWithoutLastElement(stream:Token, root:ExpressionInfo, method:MethodInfo, info:ClassInfo):ExpressionInfo
+  private function writePathWithoutLastNode(stream:Token, root:ExpressionInfo, method:MethodInfo, info:ClassInfo):ExpressionInfo
   {
     var tail:ExpressionInfo = getLastPathNode(root);
 
-    if (tail && tail.type == ExpressionType.ELEMENT)
+    if (tail)
     {
       tail.enabled = false;
       writePath(stream, root, method, info, false);
@@ -662,18 +662,42 @@ package com.guepard.parser.serialization
     return tail;
   }
 
+  private function writePropertyIncDec(stream:Token, setExpression:ExpressionInfo, method:MethodInfo, info:ClassInfo):void
+  {
+    var tail:ExpressionInfo = getLastPathNode(setExpression.child);
+    var op:String = setExpression.tokenData;
+
+    if (!tail || tail.type != ExpressionType.GET || !tail.isProperty)
+    {
+      return;
+    }
+
+    // obj.set_prop(
+    writePathWithoutLastNode(stream, setExpression.child, method, info);
+    stream.writeSymbol(".", "set_" + tail.tokenData, "(");
+
+    // obj.get_prop()
+    writePathWithoutLastNode(stream, setExpression.child, method, info);
+    stream.writeSymbol(".", "get_" + tail.tokenData, "(", ")");
+
+    stream.writeSymbol(op == "++" ? "+" : "-");
+    stream.writeSymbol("1");
+
+    stream.writeSymbol(")");
+  }
+
   private function writeDictionaryElementIncDec(stream:Token, setExpression:ExpressionInfo, method:MethodInfo, info:ClassInfo):void
   {
     var element:ExpressionInfo = getLastPathNode(setExpression.child);
-    var op:String = setExpression.tokenData;
+    var op:String = setExpression.tokenData; // "++" or "--"
 
     if (!element || element.type != ExpressionType.ELEMENT)
     {
-        return;
+      return;
     }
 
     // obj.setProperty(
-    writePathWithoutLastElement(stream, setExpression.child, method, info);
+    writePathWithoutLastNode(stream, setExpression.child, method, info);
     stream.writeSymbol(".", "setProperty", "(");
 
     // key
@@ -683,13 +707,14 @@ package com.guepard.parser.serialization
     stream.writeSymbol(",");
 
     // obj.getProperty(key)
-    writePathWithoutLastElement(stream, setExpression.child, method, info);
+    writePathWithoutLastNode(stream, setExpression.child, method, info);
     stream.writeSymbol(".", "getProperty", "(");
 
     writeBody(stream, element.body, method, info);
     removeSplitter(stream);
 
     stream.writeSymbol(")");
+
     stream.writeSymbol(op == "++" ? "+" : "-");
     stream.writeSymbol("1");
 
@@ -906,12 +931,20 @@ package com.guepard.parser.serialization
           {
             var tail:ExpressionInfo = getLastPathNode(expression.child);
 
-            if (tail &&
-                tail.type == ExpressionType.ELEMENT &&
-                (tail.isDictionary || (tail.parent && tail.parent.isDictionary)))
+            if (tail)
             {
-              writeDictionaryElementIncDec(stream, expression, method, info);
-              return;
+              if (tail.type == ExpressionType.ELEMENT &&
+                (tail.isDictionary || (tail.parent && tail.parent.isDictionary)))
+              {
+                writeDictionaryElementIncDec(stream, expression, method, info);
+                return;
+              }
+
+              if (tail.type == ExpressionType.GET && tail.isProperty)
+              {
+                writePropertyIncDec(stream, expression, method, info);
+                return;
+              }
             }
           }
 					stream.writeSymbol(expression.tokenData);
