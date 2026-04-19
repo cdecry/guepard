@@ -422,9 +422,9 @@ import flash.utils.*;
     if (x < 0 || y < 0 || x >= this._rect.width || y >= this._rect.height)
       return;
 
-    var r = (value >> 16) & 0xff;
-    var g = (value >> 8) & 0xff;
-    var b = value & 0xff;
+    var r = (color >> 16) & 0xff;
+    var g = (color >> 8) & 0xff;
+    var b = color & 0xff;
 
     var data = this._context2d.getImageData(x, y, 1, 1);
 
@@ -445,10 +445,10 @@ import flash.utils.*;
     if (x < 0 || y < 0 || x >= this._rect.width || y >= this._rect.height)
       return;
 
-    var a = (value >> 24) & 0xff;
-    var r = (value >> 16) & 0xff;
-    var g = (value >> 8) & 0xff;
-    var b = value & 0xff;
+    var a = (color >> 24) & 0xff;
+    var r = (color >> 16) & 0xff;
+    var g = (color >> 8) & 0xff;
+    var b = color & 0xff;
 
     var data = this._context2d.getImageData(x, y, 1, 1);
 
