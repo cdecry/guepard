@@ -1033,7 +1033,10 @@ import flash.geom.*;
 
     if (!lineletterslength) return;
 
-    while (lineletters[lineletterslength - 1].letter == " ") {
+    while (
+      lineletters[lineletterslength - 1] &&
+      lineletters[lineletterslength - 1].letter == " "
+    ) {
       lineMetricswidth -= lineletters[lineletterslength - 1].advance;
       lineletterslength--;
     }
