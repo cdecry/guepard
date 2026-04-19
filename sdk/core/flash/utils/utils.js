@@ -20,7 +20,7 @@
   };
 
   flash.utils.getTimer = function () {
-    return new Date().getTime();
+    return Date.now();
   };
 
   flash.utils.describeType = function (value) {

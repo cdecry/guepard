@@ -135,7 +135,7 @@ import flash.ui.*;
 
     this._renderId++;
 
-    this._time = new Date().getTime();
+    this._time = Date.now();
 
     flash.text.TextField.__clear__();
 
@@ -184,7 +184,7 @@ import flash.ui.*;
 
     flash.display.MovieClip.__nextFrame__();
 
-    var now = new Date().getTime();
+    var now = Date.now();
 
     var renderTime = now - this._time;
 
@@ -525,7 +525,7 @@ import flash.ui.*;
           data.shiftKey = e.shiftKey;
           data.commandKey = false;
           data.controlKey = false;
-          data.timestamp = new Date().getTime();
+          data.timestamp = Date.now();
           data.touchIntent = 0;
           data.isTouchPointCanceled = false;
 
