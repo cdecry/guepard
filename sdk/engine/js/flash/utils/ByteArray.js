@@ -93,7 +93,7 @@
   d.compress = function () /*void*/
   {
     //TODO
-
+    return;
     throw new Error("This method not implemented");
   };
 
@@ -425,7 +425,7 @@
 
   d.writeObject = function (object /*Object*/ /*void*/) {
     //TODO
-
+    return;
     throw new Error("This method not implemented");
   };
 
