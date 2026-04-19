@@ -1604,6 +1604,21 @@ package com.guepard.parser.serialization
 			);
 		}
 		
+    static private function getMemberRecursive(cls:ClassInfo, name:String):MemberInfo
+    {
+      while (cls)
+      {
+        var m:MemberInfo = cls.getMember(name);
+        if (m)
+        {
+          return m;
+        }
+
+        cls = cls.extendsInfo ? ClassInfo.getClass(cls.extendsInfo.data) : null;
+      }
+      return null;
+    }
+
 		static private function getMemberContext(current:NamespaceInfo, expression:ExpressionInfo, info:ClassInfo):NamespaceInfo
 		{
 			var currentInfo:ClassInfo;
@@ -1621,8 +1636,8 @@ package com.guepard.parser.serialization
 			
 			if (currentInfo)
 			{
-				var member:MemberInfo = currentInfo.getMember(name);
-				
+				var member:MemberInfo = getMemberRecursive(currentInfo, name);
+
 				if (member)
 				{
 					expression.member = member;

@@ -237,5 +237,10 @@ package flash.display
 		{
 			
 		}
+
+    public function hitTestPoint(x:Number, y:Number, shapeFlag:Boolean = false):Boolean
+    {
+      
+    }
 	}
 }
