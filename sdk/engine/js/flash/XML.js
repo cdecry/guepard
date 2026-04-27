@@ -255,19 +255,42 @@
 
   /*public*/ d.toString = function () /*String*/
   {
-    if (this._value) {
-      var children = this.children();
+    var children = null;
+    var childCount = 0;
 
-      if (this._value.nodeValue) {
-        return this._value.nodeValue;
-      } else if (children.length()) {
-        return children.toXMLString();
-      } else {
-        return this.toXMLString();
-      }
-    } else {
+    if (!this._value) {
       return "";
     }
+
+    if (this._value.nodeValue != null) {
+      return this._value.nodeValue;
+    }
+
+    children = this.children();
+
+    if (children != null) {
+      if (typeof children.length == "function") {
+        childCount = children.length();
+      } else if (typeof children.length == "number") {
+        childCount = children.length;
+      } else {
+        childCount = 0;
+        while (children[childCount] != undefined) {
+          childCount++;
+        }
+      }
+
+      if (childCount > 0) {
+        if (typeof children.toXMLString == "function") {
+          return children.toXMLString();
+        }
+        if (typeof children.toString == "function") {
+          return children.toString();
+        }
+      }
+    }
+
+    return this.toXMLString();
   };
 
   /*public*/ d.valueOf = function () /*XML*/

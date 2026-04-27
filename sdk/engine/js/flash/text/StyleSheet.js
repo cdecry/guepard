@@ -8,10 +8,17 @@ import flash.events.*;
   var d = {};
 
   d._css /*Object*/ = null;
+  d.__styles = null;
 
-  d.get__styles = function () /*Object*/ {};
+  d.get__styles = function () /*Object*/
+  {
+    return this.__styles;
+  };
 
-  d.set__styles = function (styles /*Object*/ /*void*/) {};
+  d.set__styles = function (styles /*Object*/ /*void*/) {
+    this.__styles = styles;
+    return styles;
+  };
 
   d.get_styleNames = function () /*Array*/
   {
@@ -28,7 +35,7 @@ import flash.events.*;
   d.StyleSheet = function () {
     this.EventDispatcher_constructor();
     this._css = {};
-    this.set__styles({});
+    this.__styles = {};
     return;
   };
 
@@ -63,10 +70,29 @@ import flash.events.*;
     return;
   };
 
+  /*private*/
   d.doTransform = function (n /*String*/ /*void*/) {
     var _loc_2 /*TextFormat*/ = null;
+
+    if (!this._css) {
+      this._css = {};
+    }
+
+    if (!this.__styles) {
+      this.__styles = {};
+    }
+
     _loc_2 = this.transform(this._css[n]);
-    this.get__styles()[n] = _loc_2;
+
+    if (_loc_2 == null) {
+      _loc_2 = new flash.text.TextFormat();
+    }
+
+    if (_loc_2.xml == undefined) {
+      _loc_2.xml = {};
+    }
+
+    this.__styles[n] = _loc_2;
     return;
   };
 
@@ -108,7 +134,9 @@ import flash.events.*;
     var _loc_3 /* * */ = undefined;
 
     if (formatObject == null) {
-      return null;
+      var tf = new flash.text.TextFormat();
+      tf.xml = {};
+      return tf;
     }
     _loc_2 = new flash.text.TextFormat();
     _loc_3 = formatObject.textAlign;
